@@ -16,7 +16,6 @@ pub struct ProvenSet<T> {
 enum Data<T> {
     Failure(Box<FailedJudgment>),
     Success(Set<T>), // T is sucessful result?
-    SucceedTrace(Box<SucceedJudgment>), // Just to see what will happen...
 }
 
 impl<T> From<Data<T>> for ProvenSet<T> {
@@ -71,7 +70,6 @@ impl<T: Ord + Debug> ProvenSet<T> {
                 assert!(!s.is_empty());
                 true
             }
-            Data::SucceedTrace(_) => true,
         }
     }
 
@@ -79,7 +77,6 @@ impl<T: Ord + Debug> ProvenSet<T> {
         match self.data {
             Data::Failure(e) => Err(e),
             Data::Success(_) => Ok(()),
-            Data::SucceedTrace(_) => Ok(()),
         }
     }
 
@@ -91,7 +88,6 @@ impl<T: Ord + Debug> ProvenSet<T> {
                 assert!(!s.is_empty());
                 Ok(s)
             }
-            Data::SucceedTrace(_) => todo!(),
         }
     }
 
@@ -100,7 +96,6 @@ impl<T: Ord + Debug> ProvenSet<T> {
         match &self.data {
             Data::Failure(_) => Box::new(std::iter::empty()),
             Data::Success(s) => Box::new(s.iter()),
-            Data::SucceedTrace(_) => Box::new(std::iter::empty()),
         }
     }
 
@@ -139,9 +134,6 @@ impl<T: Ord + Debug> ProvenSet<T> {
                     ProvenSet::failed_rules("flat_map", failures)
                 }
             }
-            Data::SucceedTrace(e) =>  ProvenSet {
-                data: Data::SucceedTrace(e),
-            },
         }
     }
 
@@ -165,7 +157,6 @@ impl<T: Ord + Debug> ProvenSet<T> {
             Data::Success(_) => {
                 expect.assert_eq(&self.to_string());
             }
-            Data::SucceedTrace(_) => todo!(), // We potentially only want this in debug?
         }
     }
 
@@ -179,7 +170,6 @@ impl<T: Ord + Debug> ProvenSet<T> {
             Data::Success(_) => {
                 panic!("expected an error, got successful proofs: {self}");
             }
-            Data::SucceedTrace(_) => todo!(), // We potentially only want this in debug? or maybe we want an assert_trace helper function?
         }
     }
 }
@@ -217,7 +207,6 @@ impl<T: std::fmt::Debug> std::fmt::Debug for Data<T> {
         match self {
             Self::Failure(arg0) => std::fmt::Debug::fmt(arg0, f),
             Self::Success(arg0) => std::fmt::Debug::fmt(arg0, f),
-            Self::SucceedTrace(arg0) => std::fmt::Debug::fmt(arg0, f),
         }
     }
 }
@@ -233,7 +222,6 @@ impl<T: PartialOrd> PartialOrd for Data<T> {
             (Self::Success(l0), Self::Success(r0)) => PartialOrd::partial_cmp(l0, r0),
             (Self::Failure(_), Self::Success(_)) => Some(std::cmp::Ordering::Less),
             (Self::Success(_), Self::Failure(_)) => Some(std::cmp::Ordering::Greater),
-            (_, _) => Some(std::cmp::Ordering::Greater), // todo: think about how to deal with this later
         }
     }
 }
@@ -247,7 +235,6 @@ impl<T: Ord> Ord for Data<T> {
             (Self::Success(l0), Self::Success(r0)) => Ord::cmp(l0, r0),
             (Self::Failure(_), Self::Success(_)) => std::cmp::Ordering::Less,
             (Self::Success(_), Self::Failure(_)) => std::cmp::Ordering::Greater,
-            (_, _) => std::cmp::Ordering::Greater, // todo: think about how to deal with this later
         }
     }
 }
@@ -257,7 +244,6 @@ impl<T: Hash> Hash for Data<T> {
         match self {
             Data::Failure(e) => e.to_string().hash(state),
             Data::Success(s) => s.hash(state),
-            Data::SucceedTrace(e) => e.to_string().hash(state),
         }
     }
 }
@@ -605,7 +591,6 @@ impl<T: Debug> std::fmt::Display for ProvenSet<T> {
                 writeln!(f, "}}")?;
                 Ok(())
             }
-            Data::SucceedTrace(trace) => std::fmt::Display::fmt(trace, f),
         }
     }
 }
@@ -650,7 +635,6 @@ impl<T> TryIntoIter for ProvenSet<T> {
         match self.data {
             Data::Failure(e) => Err(RuleFailureCause::FailedJudgment(e)),
             Data::Success(s) => Ok(s.into_iter()),
-            Data::SucceedTrace(_) => todo!(), // handle this later
         }
     }
 }
@@ -666,7 +650,6 @@ impl<'a, T> TryIntoIter for &'a ProvenSet<T> {
         match &self.data {
             Data::Failure(e) => Err(RuleFailureCause::FailedJudgment(e.clone())),
             Data::Success(s) => Ok(s.iter()),
-            Data::SucceedTrace(_) => todo!(), // handle this later
         }
     }
 }
