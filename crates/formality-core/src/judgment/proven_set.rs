@@ -15,7 +15,7 @@ pub struct ProvenSet<T> {
 #[derive(Clone)]
 enum Data<T> {
     Failure(Box<FailedJudgment>),
-    Success(Set<T>),
+    Success(Set<T>), // T is sucessful result?
 }
 
 impl<T> From<Data<T>> for ProvenSet<T> {
@@ -258,6 +258,16 @@ pub struct FailedJudgment {
     pub failed_rules: Set<FailedRule>,
 }
 
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Clone)]
+pub struct SucceedJudgment {
+    /// Trying to prove this judgment...
+    pub judgment: String,
+
+    /// It succeed with these rules
+    pub succeed_rules: Set<SucceedRule>,
+}
+
 #[derive(Debug)]
 struct HasNonCycle(bool);
 
@@ -368,6 +378,37 @@ pub struct FailedRule {
     pub cause: RuleFailureCause,
 }
 
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Clone)]
+pub struct SucceedRule {
+    /// If Some, then the given rule failed at the given index
+    /// (if None, then there is only a single rule and this is not relevant)...
+    pub rule_name_index: Option<(String, usize)>,
+
+    /// ...and is located in this file...
+    pub file: String,
+
+    /// ...at this line...
+    pub line: u32,
+
+    /// ...and this column...
+    pub column: u32,
+}
+
+impl SucceedRule {
+    #[track_caller]
+    pub fn new() -> Self {
+        let location = std::panic::Location::caller();
+        SucceedRule { 
+            rule_name_index: None,
+            file: location.file().to_string(),
+            line: location.line(),
+            column: location.column(),
+        }
+    }
+
+}
+
 impl FailedRule {
     #[track_caller]
     pub fn new(cause: RuleFailureCause) -> Self {
@@ -444,6 +485,23 @@ impl std::fmt::Display for FailedJudgment {
     }
 }
 
+
+impl std::fmt::Display for SucceedJudgment {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let SucceedJudgment {
+            judgment,
+            succeed_rules,
+        } = self;
+        // It is impossible to have empty succeed rule?
+        let rules: Vec<String> = succeed_rules.iter().map(|r| r.to_string()).collect();
+        let rules = indent(rules.join("\n"));
+        write!(
+            f,
+            "judgment `{judgment}` succeed at the following rule(s):\n{rules}"
+        )
+    }
+}
+
 impl std::fmt::Display for FailedRule {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let FailedRule {
@@ -465,6 +523,30 @@ impl std::fmt::Display for FailedRule {
                 f,
                 "failed at ({file}:{line}:{column}) because\n{cause}",
                 cause = indent(cause),
+            )
+        }
+    }
+}
+
+
+impl std::fmt::Display for SucceedRule {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let SucceedRule {
+            rule_name_index,
+            file,
+            line,
+            column,
+        } = self;
+
+        if let Some((rule_name, step_index)) = rule_name_index {
+            write!(
+                f,
+                "the rule {rule_name:?} succeed at step #{step_index} ({file}:{line}:{column}) ",
+            )
+        } else {
+            write!(
+                f,
+                "succeed at ({file}:{line}:{column}) ",
             )
         }
     }
