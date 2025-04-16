@@ -1,8 +1,8 @@
 use crate::{set, Set};
 use std::{
-    fmt::Debug,
-    hash::{Hash, Hasher},
+    collections::BTreeMap, fmt::Debug, hash::{Hash, Hasher}
 };
+use std::collections::BTreeSet;
 
 /// Represents a set of items that were successfully proven using a judgment.
 /// If the set is empty, then tracks the reason that the judgment failed for diagnostic purposes.
@@ -15,7 +15,16 @@ pub struct ProvenSet<T> {
 #[derive(Clone)]
 enum Data<T> {
     Failure(Box<FailedJudgment>),
-    Success(Set<T>), // T is sucessful result?
+    Success(BTreeMap<T, SucceedJudgment>), // T is sucessful result?
+}
+
+// todo: probably define a new type? decide later
+fn to_set<T: Ord + Clone> (success_map: BTreeMap<T, SucceedJudgment>) ->  BTreeSet<T> {
+    let mut item = set![];
+    for (res, _) in success_map.iter() {
+        item.insert(res.clone());
+    }
+    item
 }
 
 impl<T> From<Data<T>> for ProvenSet<T> {
@@ -30,7 +39,7 @@ impl<T> From<FailedJudgment> for ProvenSet<T> {
     }
 }
 
-impl<T: Ord + Debug> ProvenSet<T> {
+impl<T: Ord + Debug + Clone> ProvenSet<T> {
     /// Creates a judgment set with a single item that was successfully proven.
     pub fn singleton(item: T) -> Self {
         Self::proven(set![item])
@@ -40,6 +49,8 @@ impl<T: Ord + Debug> ProvenSet<T> {
     /// The set should be non-empty.
     pub fn proven(data: Set<T>) -> Self {
         assert!(!data.is_empty());
+        // TODO: handle this later depends on where this is used. 
+        // We might or might not want to keep the SucceedJudgment here 
         Data::Success(data).into()
     }
 
@@ -85,6 +96,7 @@ impl<T: Ord + Debug> ProvenSet<T> {
         match self.data {
             Data::Failure(e) => Err(e),
             Data::Success(s) => {
+                let s= to_set(s);
                 assert!(!s.is_empty());
                 Ok(s)
             }
@@ -95,7 +107,10 @@ impl<T: Ord + Debug> ProvenSet<T> {
     pub fn iter<'a>(&'a self) -> Box<dyn Iterator<Item = &'a T> + 'a> {
         match &self.data {
             Data::Failure(_) => Box::new(std::iter::empty()),
-            Data::Success(s) => Box::new(s.iter()),
+            Data::Success(s) => { 
+                // TODO: resolve this
+                Box::new(to_set(s.clone()).iter())
+            },
         }
     }
 
@@ -108,15 +123,16 @@ impl<T: Ord + Debug> ProvenSet<T> {
     pub fn flat_map<I, U>(self, mut op: impl FnMut(T) -> I) -> ProvenSet<U>
     where
         I: TryIntoIter<Item = U>,
-        U: Ord + Debug,
+        U: Ord + Debug + Clone,
     {
         match self.data {
             Data::Failure(e) => ProvenSet {
                 data: Data::Failure(e),
             },
-            Data::Success(set) => {
+            Data::Success(map) => {
                 let mut items = set![];
                 let mut failures = set![];
+                let set = to_set(map);
 
                 for item in set {
                     let collection = op(item);
@@ -144,7 +160,7 @@ impl<T: Ord + Debug> ProvenSet<T> {
     #[track_caller]
     pub fn map<U>(self, mut op: impl FnMut(T) -> U) -> ProvenSet<U>
     where
-        U: Ord + Debug,
+        U: Ord + Debug + Clone,
     {
         self.flat_map(|elem| set![op(elem)])
     }
@@ -174,7 +190,7 @@ impl<T: Ord + Debug> ProvenSet<T> {
     }
 }
 
-impl<I: Ord + Debug> FromIterator<I> for ProvenSet<I> {
+impl<I: Ord + Debug + Clone> FromIterator<I> for ProvenSet<I> {
     fn from_iter<T: IntoIterator<Item = I>>(iter: T) -> Self {
         let set: Set<I> = iter.into_iter().collect();
         if set.is_empty() {
@@ -259,7 +275,7 @@ pub struct FailedJudgment {
 }
 
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Clone)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Clone, Hash)]
 pub struct SucceedJudgment {
     /// Trying to prove this judgment...
     pub judgment: String,
@@ -379,7 +395,7 @@ pub struct FailedRule {
 }
 
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Clone)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Clone, Hash)]
 pub struct SucceedRule {
     /// If Some, then the given rule failed at the given index
     /// (if None, then there is only a single rule and this is not relevant)...
@@ -624,7 +640,8 @@ pub trait TryIntoIter {
     ) -> Result<Self::IntoIter, RuleFailureCause>;
 }
 
-impl<T> TryIntoIter for ProvenSet<T> {
+// (tiif): Why are there two version?
+impl<T: Ord + Clone> TryIntoIter for ProvenSet<T> {
     type IntoIter = <Set<T> as IntoIterator>::IntoIter;
     type Item = T;
 
@@ -634,12 +651,12 @@ impl<T> TryIntoIter for ProvenSet<T> {
     ) -> Result<Self::IntoIter, RuleFailureCause> {
         match self.data {
             Data::Failure(e) => Err(RuleFailureCause::FailedJudgment(e)),
-            Data::Success(s) => Ok(s.into_iter()),
+            Data::Success(s) => Ok(to_set(s).into_iter()),
         }
     }
 }
 
-impl<'a, T> TryIntoIter for &'a ProvenSet<T> {
+impl<'a, T: Clone + Ord> TryIntoIter for &'a ProvenSet<T> {
     type IntoIter = <&'a Set<T> as IntoIterator>::IntoIter;
     type Item = &'a T;
 
@@ -649,7 +666,11 @@ impl<'a, T> TryIntoIter for &'a ProvenSet<T> {
     ) -> Result<Self::IntoIter, RuleFailureCause> {
         match &self.data {
             Data::Failure(e) => Err(RuleFailureCause::FailedJudgment(e.clone())),
-            Data::Success(s) => Ok(s.iter()),
+            Data::Success(s) => {
+                // TODO (tiif): why does it request for iter when the return type is IntoIter?
+                // maybe 'a is doing some magic?
+                Ok(to_set(s.clone()).into_iter())
+            },
         }
     }
 }
