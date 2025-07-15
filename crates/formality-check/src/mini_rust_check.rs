@@ -39,6 +39,18 @@ impl Check<'_> {
         for lv in &body.locals {
             self.prove_goal(&env, &fn_assumptions, lv.ty.well_formed())?;
         }
+
+        // Check if the local_id in function arguments are declared.
+        for function_arg_id in &body.args {
+            if body.locals.iter().find(|declared_decl| declared_decl.id == *function_arg_id).is_none() {
+                bail!("Function argument {:?} is not declared, consider declaring them with `let {:?}: type;`", function_arg_id, function_arg_id);
+            }
+        }
+
+        // Check if the local_id in the return place are declared.
+        if body.locals.iter().find(|declared_decl| declared_decl.id == body.ret).is_none() {
+            bail!("Function return place {:?} is not declared, consider declaring them with `let {:?}: type;`", body.ret, body.ret);
+        }
         let local_variables: Map<LocalId, Ty> = body
             .locals
             .iter()

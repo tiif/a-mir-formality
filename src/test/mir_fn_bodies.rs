@@ -205,6 +205,53 @@ fn test_invalid_local_in_place_mention() {
     )
 }
 
+
+// Test the behavior of having undeclared local_id in function argument.
+#[test]
+fn test_undeclared_local_in_function_arg() {
+    crate::assert_err!(
+        [
+            crate Foo {
+                fn foo (u32) -> u32 = minirust(v1) -> v0 {
+                    let v0: u32;
+
+                    bb0: {
+                        statements {
+                        }
+                        return;
+                    }
+
+                };
+            }
+        ]
+        []
+        expect_test::expect!["Function argument v1 is not declared, consider declaring them with `let v1: type;`"]
+    )
+}
+
+
+// Test the behavior of having undeclared local_id in return place.
+#[test]
+fn test_undeclared_local_in_return_place() {
+    crate::assert_err!(
+        [
+            crate Foo {
+                fn foo () -> u32 = minirust() -> v0 {
+
+                    bb0: {
+                        statements {
+                        }
+                        return;
+                    }
+
+                };
+            }
+        ]
+        []
+        expect_test::expect!["Function return place v0 is not declared, consider declaring them with `let v0: type;`"]
+    )
+}
+
 // Test the behaviour of having invalid bb_id in goto terminator.
 #[test]
 fn test_invalid_goto_bbid() {
