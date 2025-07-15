@@ -204,7 +204,6 @@ fn test_invalid_local_in_place_mention() {
     )
 }
 
-
 // Test the behavior of having undeclared local_id in function argument.
 #[test]
 fn test_undeclared_local_in_function_arg() {
@@ -227,7 +226,6 @@ fn test_undeclared_local_in_function_arg() {
         expect_test::expect!["Function argument v1 is not declared, consider declaring them with `let v1: type;`"]
     )
 }
-
 
 // Test the behavior of having undeclared local_id in return place.
 #[test]

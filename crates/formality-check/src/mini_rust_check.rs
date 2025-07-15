@@ -42,13 +42,23 @@ impl Check<'_> {
 
         // Check if the local_id in function arguments are declared.
         for function_arg_id in &body.args {
-            if body.locals.iter().find(|declared_decl| declared_decl.id == *function_arg_id).is_none() {
+            if body
+                .locals
+                .iter()
+                .find(|declared_decl| declared_decl.id == *function_arg_id)
+                .is_none()
+            {
                 bail!("Function argument {:?} is not declared, consider declaring them with `let {:?}: type;`", function_arg_id, function_arg_id);
             }
         }
 
         // Check if the local_id in the return place are declared.
-        if body.locals.iter().find(|declared_decl| declared_decl.id == body.ret).is_none() {
+        if body
+            .locals
+            .iter()
+            .find(|declared_decl| declared_decl.id == body.ret)
+            .is_none()
+        {
             bail!("Function return place {:?} is not declared, consider declaring them with `let {:?}: type;`", body.ret, body.ret);
         }
         let local_variables: Map<LocalId, Ty> = body
@@ -216,7 +226,10 @@ impl Check<'_> {
                     .iter()
                     .find(|(declared_local_id, _)| *declared_local_id == local_id)
                 else {
-                    bail!("PlaceExpression::Local: unknown local name `{:?}`", local_id)
+                    bail!(
+                        "PlaceExpression::Local: unknown local name `{:?}`",
+                        local_id
+                    )
                 };
                 place_ty = ty;
             }
