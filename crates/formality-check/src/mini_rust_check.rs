@@ -216,7 +216,7 @@ impl Check<'_> {
                     .iter()
                     .find(|(declared_local_id, _)| *declared_local_id == local_id)
                 else {
-                    bail!("PlaceExpression::Local: unknown local name")
+                    bail!("PlaceExpression::Local: unknown local name `{:?}`", local_id)
                 };
                 place_ty = ty;
             }

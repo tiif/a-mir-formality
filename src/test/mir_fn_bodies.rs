@@ -200,8 +200,7 @@ fn test_invalid_local_in_place_mention() {
             }
         ]
         []
-        expect_test::expect![[r#"
-            PlaceExpression::Local: unknown local name"#]]
+        expect_test::expect!["PlaceExpression::Local: unknown local name `v2`"]
     )
 }
 
