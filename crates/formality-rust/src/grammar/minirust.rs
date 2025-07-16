@@ -51,7 +51,6 @@ pub struct LocalDecl {
 }
 
 /// Based on [MiniRust statements](https://github.com/minirust/minirust/blob/9ae11cc202d040f08bc13ec5254d3d41d5f3cc25/spec/lang/syntax.md#statements-terminators).
-// FIXME(tiif): for some reason statements is always not required
 #[term($id: {statements {$*statements} $terminator;})]
 pub struct BasicBlock {
     pub id: BbId,
@@ -101,6 +100,8 @@ pub enum Terminator {
         /// The place to put the return value into.
         ret: PlaceExpression,
         /// The block to jump to when this call returns.
+        /// In minirust, if this is None, then UB will be raised when the function returns.
+        /// FIXME(tiif): should we have the same behaviour as minirust?
         next_block: Option<BbId>,
     },
 

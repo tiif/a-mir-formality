@@ -198,12 +198,9 @@ impl Check<'_> {
                 )?;
 
                 // Check that the next block is valid.
-                let Some(bb_id) = next_block else {
-                    bail!(
-                        "There should be next block for Terminator::Call, but it does not exist!"
-                    );
+                if let Some(bb_id) = next_block {
+                    self.check_block_exist(typeck_env, bb_id)?;
                 };
-                self.check_block_exist(typeck_env, bb_id)?;
             }
             minirust::Terminator::Return => {
                 // Check that the return local variable has been initialized

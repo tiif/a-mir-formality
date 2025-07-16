@@ -140,6 +140,42 @@ fn test_place_mention_statement() {
     )
 }
 
+// Test what will happen if the next block does not exist for Terminator::Call.
+#[test]
+fn test_no_next_bb_for_call_terminator() {
+    crate::assert_ok!(
+        [
+            crate Foo {
+                fn foo(u32) -> u32 = minirust(v1) -> v0 {
+                    let v0: u32;
+                    let v1: u32;
+
+                    bb0: {
+                        statements {
+                            local(v0) = load(local(v1));
+                        }
+                        return;
+                    }
+                };
+
+                fn bar() -> u32 = minirust() -> v0 {
+                    let v0: u32;
+                    let v1: u32;
+
+                    bb0: {
+                        statements {
+                            local(v0) = load(local(v1));
+                        }
+                        call fn_id foo (Move(local(v1))) -> local(v0);
+                    }
+
+                };
+            }
+        ]
+        expect_test::expect![["()"]]
+    )
+}
+
 /// Test the behaviour of assigning value that is not subtype of the place.
 /// This is equivalent to:
 /// ```
@@ -346,9 +382,9 @@ fn test_pass_non_subtype_arg() {
     )
 }
 
-// Test what will happen if the next block does not exist for Terminator::Call.
+// Test the behaviour of having invalid next bbid Terminator::Call.
 #[test]
-fn test_no_next_bb_for_call_terminator() {
+fn test_invalid_next_bbid_for_call_terminator() {
     crate::assert_err!(
         [
             crate Foo {
@@ -372,15 +408,14 @@ fn test_no_next_bb_for_call_terminator() {
                         statements {
                             local(v0) = load(local(v1));
                         }
-                        call fn_id foo (Move(local(v1))) -> local(v0);
+                        call fn_id foo (Move(local(v1))) -> local(v0) goto bb1;
                     }
 
                 };
             }
         ]
         []
-        expect_test::expect![[r#"
-            There should be next block for Terminator::Call, but it does not exist!"#]]
+        expect_test::expect!["Basic block bb1 does not exist"]
     )
 }
 
