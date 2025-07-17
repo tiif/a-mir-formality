@@ -5,8 +5,7 @@ use formality_rust::{
 };
 use formality_types::grammar::{Fallible, Wcs};
 
-use crate::Check;
-use crate::CrateItem;
+use crate::{Check, CrateItem};
 
 impl Check<'_> {
     /// A "free function" is a free-standing function that is not part of an impl.

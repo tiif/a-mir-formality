@@ -12,8 +12,7 @@ use formality_rust::grammar::FnBoundData;
 use formality_types::grammar::FnId;
 use formality_types::grammar::{Relation, Ty, Wcs};
 
-use crate::Check;
-use crate::CrateItem;
+use crate::{Check, CrateItem};
 use anyhow::bail;
 
 impl Check<'_> {
@@ -40,7 +39,7 @@ impl Check<'_> {
             self.prove_goal(&env, &fn_assumptions, lv.ty.well_formed())?;
         }
 
-        // Check if the local_id in function arguments are declared.
+        // Check whether the local_id in function arguments are declared.
         for function_arg_id in &body.args {
             if body
                 .locals
@@ -52,7 +51,7 @@ impl Check<'_> {
             }
         }
 
-        // Check if the local_id in the return place are declared.
+        // Check whether the local_id in the return place are declared.
         if body
             .locals
             .iter()
@@ -61,6 +60,7 @@ impl Check<'_> {
         {
             bail!("Function return place {:?} is not declared, consider declaring them with `let {:?}: type;`", body.ret, body.ret);
         }
+
         let local_variables: Map<LocalId, Ty> = body
             .locals
             .iter()
@@ -128,14 +128,17 @@ impl Check<'_> {
             minirust::Statement::Assign(place_expression, value_expression) => {
                 // Check if the place expression is well-formed.
                 let place_ty = self.check_place(typeck_env, place_expression)?;
+
                 // Check if the value expression is well-formed.
                 let value_ty = self.check_value(typeck_env, value_expression)?;
+
                 // Check that the type of the value is a subtype of the place's type
                 self.prove_goal(
                     &typeck_env.env,
                     fn_assumptions,
                     Relation::sub(value_ty, place_ty),
                 )?;
+
                 // Record if the return place has been initialised.
                 if *place_expression == PlaceExpression::Local(typeck_env.ret_id.clone()) {
                     typeck_env.ret_place_is_initialised = true;
@@ -159,7 +162,7 @@ impl Check<'_> {
         match terminator {
             minirust::Terminator::Goto(bb_id) => {
                 // Check that the basic block `bb_id` exists.
-                self.check_block_exist(typeck_env, bb_id)?;
+                self.check_block_exists(typeck_env, bb_id)?;
             }
             minirust::Terminator::Call {
                 callee,
@@ -170,13 +173,19 @@ impl Check<'_> {
             } => {
                 // Function is part of the value expression, so we will check if the function exists in check_value.
                 self.check_value(typeck_env, callee)?;
+
                 // Get argument information from the callee.
                 let Fn(callee_fn_id) = callee else {
                     unreachable!("Callee must exists in Terminator::Call");
                 };
+
                 let callee_fn_bound_data = typeck_env.callee_input_tys.get(callee_fn_id).unwrap();
                 let callee_declared_input_tys = callee_fn_bound_data.input_tys.clone();
                 // Check if the numbers of arguments passed equals to number of arguments declared.
+                if callee_declared_input_tys.len() != actual_arguments.len() {
+                    bail!("Function arguments number mismatch: the number expected is {:?}, the actual number is {:?}", callee_declared_input_tys.len(), actual_arguments.len());
+                }
+
                 let arguments = zip(callee_declared_input_tys, actual_arguments);
                 for (declared_ty, actual_argument) in arguments {
                     // Check if the arguments are well formed.
@@ -188,22 +197,24 @@ impl Check<'_> {
                         Relation::sub(&actual_ty, &declared_ty),
                     )?;
                 }
-                // Check if ret is well-formed.
+
+                // Check whether ret place is well-formed.
                 let actual_return_ty = self.check_place(typeck_env, ret)?;
-                // Check that the fn's declared return type is a subtype of the type of the local variable `ret`
+
+                // Check if the fn's declared return type is a subtype of the type of the local variable `ret`
                 self.prove_goal(
                     &typeck_env.env,
                     fn_assumptions,
                     Relation::sub(&typeck_env.output_ty, &actual_return_ty),
                 )?;
 
-                // Check that the next block is valid.
+                // Check the validity of next bb_id.
                 if let Some(bb_id) = next_block {
-                    self.check_block_exist(typeck_env, bb_id)?;
+                    self.check_block_exists(typeck_env, bb_id)?;
                 };
             }
             minirust::Terminator::Return => {
-                // Check that the return local variable has been initialized
+                // Check if the return local variable has been initialized
                 if !typeck_env.ret_place_is_initialised {
                     bail!("The return local variable has not been initialized.")
                 }
@@ -287,7 +298,7 @@ impl Check<'_> {
         Ok(ty)
     }
 
-    fn check_block_exist(&self, env: &TypeckEnv, id: &BbId) -> Fallible<()> {
+    fn check_block_exists(&self, env: &TypeckEnv, id: &BbId) -> Fallible<()> {
         for block in env.blocks.iter() {
             if *id == block.id {
                 return Ok(());
