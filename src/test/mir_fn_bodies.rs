@@ -1,6 +1,6 @@
-/// Test valid assign statement.
+/// Test assign statement with locals at rhs.
 #[test]
-fn test_assign_statement() {
+fn test_assign_statement_local_only() {
     crate::assert_ok!(
         [
             crate Foo {
@@ -11,6 +11,29 @@ fn test_assign_statement() {
                     bb0: {
                         statements {
                             local(v0) = load(local(v1));
+                        }
+                        return;
+                    }
+
+                };
+            }
+        ]
+        expect_test::expect![["()"]]
+    )
+}
+
+// Test assign statement with constant at rhs.
+#[test]
+fn test_assign_constant() {
+    crate::assert_ok!(
+        [
+            crate Foo {
+                fn foo () -> u32 = minirust() -> v0 {
+                    let v0: u32;
+
+                    bb0: {
+                        statements {
+                            local(v0) = constant(5: u32);
                         }
                         return;
                     }
@@ -176,7 +199,7 @@ fn test_no_next_bb_for_call_terminator() {
     )
 }
 
-/// Test the behaviour of assigning value that is not subtype of the place.
+/// Test invalid assign statement with local at rhs.
 /// This is equivalent to:
 /// ```
 ///    fn foo(v1: u32) -> () {
@@ -212,6 +235,35 @@ fn test_invalid_assign_statement() {
                 judgment `prove_wc_list { goal: {u32 <: ()}, assumptions: {}, env: Env { variables: [], bias: Soundness } }` failed at the following rule(s):
                   the rule "some" failed at step #0 (src/file.rs:LL:CC) because
                     judgment had no applicable rules: `prove_wc { goal: u32 <: (), assumptions: {}, env: Env { variables: [], bias: Soundness } }`"#]]
+    )
+}
+
+// Test invalid assign statement with constant at rhs.
+#[test]
+fn test_invalid_assign_constant() {
+    crate::assert_err!(
+        [
+            crate Foo {
+                fn foo () -> usize = minirust() -> v0 {
+                    let v0: usize;
+
+                    bb0: {
+                        statements {
+                            local(v0) = constant(5: u32);
+                        }
+                        return;
+                    }
+
+                };
+            }
+        ]
+        []
+        expect_test::expect![[r#"
+            judgment `prove { goal: {u32 <: usize}, assumptions: {}, env: Env { variables: [], bias: Soundness }, decls: decls(222, [], [], [], [], [], [], {}, {}) }` failed at the following rule(s):
+              failed at (src/file.rs:LL:CC) because
+                judgment `prove_wc_list { goal: {u32 <: usize}, assumptions: {}, env: Env { variables: [], bias: Soundness } }` failed at the following rule(s):
+                  the rule "some" failed at step #0 (src/file.rs:LL:CC) because
+                    judgment had no applicable rules: `prove_wc { goal: u32 <: usize, assumptions: {}, env: Env { variables: [], bias: Soundness } }`"#]]
     )
 }
 

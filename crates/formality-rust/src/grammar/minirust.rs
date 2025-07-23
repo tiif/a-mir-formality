@@ -1,7 +1,8 @@
-use formality_core::id;
+use formality_core::{id, UpcastFrom};
 use formality_macros::term;
-use formality_types::grammar::{Parameter, Ty};
+use formality_types::grammar::{Parameter, ScalarId, Ty};
 
+use crate::grammar::minirust::Constant::*;
 use crate::grammar::FnId;
 
 // This definition is based on [MiniRust](https://github.com/minirust/minirust/blob/master/spec/lang/syntax.md).
@@ -120,6 +121,8 @@ pub enum ArgumentExpression {
 
 #[term]
 pub enum ValueExpression {
+    #[grammar(constant($v0))]
+    Constant(Constant),
     #[grammar(fn_id $v0)]
     Fn(FnId),
     // #[grammar($(v0) as $v1)]
@@ -129,10 +132,59 @@ pub enum ValueExpression {
     // GetDiscriminant
     #[grammar(load($v0))]
     Load(PlaceExpression),
-    // TODO: literals
     // AddrOf
     // UnOp
     // BinOp
+}
+
+#[term]
+pub enum Constant {
+    #[grammar($v0: u8)]
+    U8(u8),
+    #[grammar($v0: u16)]
+    U16(u16),
+    #[grammar($v0: u32)]
+    U32(u32),
+    #[grammar($v0: u64)]
+    U64(u64),
+    #[grammar($v0: usize)]
+    Usize(usize),
+    #[grammar($v0: i8)]
+    I8(i8),
+    #[grammar($v0: i16)]
+    I16(i16),
+    #[grammar($v0: i32)]
+    I32(i32),
+    #[grammar($v0: i64)]
+    I64(i64),
+    #[grammar($v0: isize)]
+    Isize(isize),
+    #[grammar($v0)]
+    Bool(Bool),
+}
+
+#[term]
+pub enum Bool {
+    True,
+    False
+}
+
+impl Constant {
+    pub fn to_ty(&self) -> Ty {
+        match self {
+            U8(_) => Ty::upcast_from(ScalarId::U8),
+            U16(_) => Ty::upcast_from(ScalarId::U16),
+            U32(_) => Ty::upcast_from(ScalarId::U32),
+            U64(_) => Ty::upcast_from(ScalarId::U64),
+            Usize(_) => Ty::upcast_from(ScalarId::Usize),
+            I8(_) => Ty::upcast_from(ScalarId::I8),
+            I16(_) => Ty::upcast_from(ScalarId::I16),
+            I32(_) => Ty::upcast_from(ScalarId::I32),
+            I64(_) => Ty::upcast_from(ScalarId::I64),
+            Isize(_) => Ty::upcast_from(ScalarId::Isize),
+            Bool(_) => Ty::upcast_from(ScalarId::Bool),
+        }
+    }
 }
 
 #[term]

@@ -99,7 +99,44 @@ impl<L: Language> CoreVisit<L> for usize {
     fn assert_valid(&self) {}
 }
 
+
+impl<L: Language> CoreVisit<L> for u8 {
+    fn free_variables(&self) -> Vec<CoreVariable<L>> {
+        vec![]
+    }
+
+    fn size(&self) -> usize {
+        1
+    }
+
+    fn assert_valid(&self) {}
+}
+
+impl<L: Language> CoreVisit<L> for u16 {
+    fn free_variables(&self) -> Vec<CoreVariable<L>> {
+        vec![]
+    }
+
+    fn size(&self) -> usize {
+        1
+    }
+
+    fn assert_valid(&self) {}
+}
+
 impl<L: Language> CoreVisit<L> for u32 {
+    fn free_variables(&self) -> Vec<CoreVariable<L>> {
+        vec![]
+    }
+
+    fn size(&self) -> usize {
+        1
+    }
+
+    fn assert_valid(&self) {}
+}
+
+impl<L: Language> CoreVisit<L> for u64 {
     fn free_variables(&self) -> Vec<CoreVariable<L>> {
         vec![]
     }
@@ -122,6 +159,71 @@ impl<L: Language> CoreVisit<L> for u128 {
 
     fn assert_valid(&self) {}
 }
+
+impl<L: Language> CoreVisit<L> for i8 {
+    fn free_variables(&self) -> Vec<CoreVariable<L>> {
+        vec![]
+    }
+
+    fn size(&self) -> usize {
+        1
+    }
+
+    fn assert_valid(&self) {}
+}
+
+impl<L: Language> CoreVisit<L> for i16 {
+    fn free_variables(&self) -> Vec<CoreVariable<L>> {
+        vec![]
+    }
+
+    fn size(&self) -> usize {
+        1
+    }
+
+    fn assert_valid(&self) {}
+}
+
+
+impl<L: Language> CoreVisit<L> for i32 {
+    fn free_variables(&self) -> Vec<CoreVariable<L>> {
+        vec![]
+    }
+
+    fn size(&self) -> usize {
+        1
+    }
+
+    fn assert_valid(&self) {}
+}
+
+
+impl<L: Language> CoreVisit<L> for i64 {
+    fn free_variables(&self) -> Vec<CoreVariable<L>> {
+        vec![]
+    }
+
+    fn size(&self) -> usize {
+        1
+    }
+
+    fn assert_valid(&self) {}
+}
+
+
+impl<L: Language> CoreVisit<L> for isize {
+    fn free_variables(&self) -> Vec<CoreVariable<L>> {
+        vec![]
+    }
+
+    fn size(&self) -> usize {
+        1
+    }
+
+    fn assert_valid(&self) {}
+}
+
+
 
 impl<L: Language> CoreVisit<L> for () {
     fn free_variables(&self) -> Vec<CoreVariable<L>> {

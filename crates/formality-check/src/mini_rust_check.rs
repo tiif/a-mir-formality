@@ -4,7 +4,7 @@ use formality_core::{Fallible, Map, Upcast};
 use formality_prove::Env;
 use formality_rust::grammar::minirust::ArgumentExpression::{ByValue, InPlace};
 use formality_rust::grammar::minirust::PlaceExpression::Local;
-use formality_rust::grammar::minirust::ValueExpression::{Fn, Load};
+use formality_rust::grammar::minirust::ValueExpression::{Constant, Fn, Load};
 use formality_rust::grammar::minirust::{
     self, ArgumentExpression, BasicBlock, BbId, LocalId, PlaceExpression, ValueExpression,
 };
@@ -287,6 +287,11 @@ impl Check<'_> {
                 }
                 value_ty = typeck_env.output_ty.clone();
                 Ok(value_ty)
+            }
+            Constant(constant) => {
+                // If the actual value overflows / does not match the type of the constant,
+                // it will be rejected by the parser.
+                Ok(constant.to_ty())
             }
         }
     }
