@@ -8,7 +8,7 @@ use formality_rust::grammar::minirust::ValueExpression::{Constant, Fn, Load};
 use formality_rust::grammar::minirust::{
     self, ArgumentExpression, BasicBlock, BbId, LocalId, PlaceExpression, ValueExpression,
 };
-use formality_rust::grammar::{FnBoundData};
+use formality_rust::grammar::FnBoundData;
 use formality_types::grammar::{CrateId, FnId};
 use formality_types::grammar::{Relation, Ty, Wcs};
 
@@ -23,7 +23,7 @@ impl Check<'_> {
         fn_assumptions: &Wcs,
         body: minirust::Body,
         declared_input_tys: Vec<Ty>,
-        crate_id: &CrateId
+        crate_id: &CrateId,
     ) -> Fallible<()> {
         // Type-check:
         //
@@ -256,30 +256,32 @@ impl Check<'_> {
             Fn(fn_id) => {
                 // Check if the function called is in declared in current crate.
 
-                // Find the crate that is currently being typeck. 
-                let curr_crate = self.program.crates.iter().find(|c| c.id == typeck_env.crate_id ).unwrap();
-
-                // Find the callee from current crate. 
-                let callee  = curr_crate
-                    .items
+                // Find the crate that is currently being typeck.
+                let curr_crate = self
+                    .program
+                    .crates
                     .iter()
-                    .find(|item| {
-                        match item {
-                            CrateItem::Fn(fn_declared) => {
-                                if fn_declared.id == *fn_id {
-                                    let fn_bound_data =
-                                        typeck_env.env.instantiate_universally(&fn_declared.binder);
-                                    // Store the callee information in typeck_env, we will need this when type checking Terminator::Call.
-                                    typeck_env
-                                        .callee_input_tys
-                                        .insert(fn_declared.id.clone(), fn_bound_data);
-                                    return true;
-                                }
-                                false
+                    .find(|c| c.id == typeck_env.crate_id)
+                    .unwrap();
+
+                // Find the callee from current crate.
+                let callee = curr_crate.items.iter().find(|item| {
+                    match item {
+                        CrateItem::Fn(fn_declared) => {
+                            if fn_declared.id == *fn_id {
+                                let fn_bound_data =
+                                    typeck_env.env.instantiate_universally(&fn_declared.binder);
+                                // Store the callee information in typeck_env, we will need this when type checking Terminator::Call.
+                                typeck_env
+                                    .callee_input_tys
+                                    .insert(fn_declared.id.clone(), fn_bound_data);
+                                return true;
                             }
-                            _ => false,
+                            false
                         }
-                    });
+                        _ => false,
+                    }
+                });
 
                 // If the callee is not found, return error.
                 if callee.is_none() {
@@ -348,7 +350,7 @@ struct TypeckEnv {
     callee_input_tys: Map<FnId, FnBoundData>,
 
     /// The id of the crate where this function resides.
-    /// We need this to access information about other functions 
+    /// We need this to access information about other functions
     /// declared in the current crate.
     crate_id: CrateId,
 }

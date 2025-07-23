@@ -166,7 +166,7 @@ pub enum Constant {
 #[term]
 pub enum Bool {
     True,
-    False
+    False,
 }
 
 impl Constant {

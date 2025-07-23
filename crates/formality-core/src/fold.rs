@@ -76,7 +76,6 @@ impl<L: Language> CoreFold<L> for u8 {
     }
 }
 
-
 impl<L: Language> CoreFold<L> for u16 {
     fn substitute(&self, _substitution_fn: SubstitutionFn<'_, L>) -> Self {
         *self
@@ -95,13 +94,11 @@ impl<L: Language> CoreFold<L> for u64 {
     }
 }
 
-
 impl<L: Language> CoreFold<L> for i8 {
     fn substitute(&self, _substitution_fn: SubstitutionFn<'_, L>) -> Self {
         *self
     }
 }
-
 
 impl<L: Language> CoreFold<L> for i16 {
     fn substitute(&self, _substitution_fn: SubstitutionFn<'_, L>) -> Self {
@@ -109,13 +106,11 @@ impl<L: Language> CoreFold<L> for i16 {
     }
 }
 
-
 impl<L: Language> CoreFold<L> for i32 {
     fn substitute(&self, _substitution_fn: SubstitutionFn<'_, L>) -> Self {
         *self
     }
 }
-
 
 impl<L: Language> CoreFold<L> for i64 {
     fn substitute(&self, _substitution_fn: SubstitutionFn<'_, L>) -> Self {
