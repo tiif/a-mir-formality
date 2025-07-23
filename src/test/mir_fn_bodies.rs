@@ -28,12 +28,32 @@ fn test_assign_constant() {
     crate::assert_ok!(
         [
             crate Foo {
-                fn foo () -> u32 = minirust() -> v0 {
-                    let v0: u32;
+                fn foo () -> u8 = minirust() -> v0 {
+                    let v0: u8;
+                    let v1: u16;
+                    let v2: u32;
+                    let v3: u64;
+                    let v4: usize;
+                    let v5: i8;
+                    let v6: i16;
+                    let v7: i32;
+                    let v8: i64;
+                    let v9: isize;
+                    let v10: bool;
 
                     bb0: {
                         statements {
-                            local(v0) = constant(5: u32);
+                            local(v0) = constant(5: u8);
+                            local(v1) = constant(5: u16);
+                            local(v2) = constant(5: u32);
+                            local(v3) = constant(5: u64);
+                            local(v4) = constant(5: usize);
+                            local(v5) = constant(5: i8);
+                            local(v6) = constant(5: i16);
+                            local(v7) = constant(5: i32);
+                            local(v8) = constant(5: i64);
+                            local(v9) = constant(5: isize);
+                            local(v10) = constant(false);
                         }
                         return;
                     }
